@@ -4,67 +4,68 @@ from langchain_core.tools import tool
 from dotenv import load_dotenv
 import os
 from google.genai import types
+
 load_dotenv()
 client = genai.Client()
 
-def strip_code_fences(code: str) -> str:
-code = code.strip()
-# Remove ```python ... ``` or ``` ... ```
-if code.startswith("```"):
-# remove first line (```python or ```)
-code = code.split("\n", 1)[1]
-if code.endswith("```"):
-code = code.rsplit("\n", 1)[0]
-return code.strip()
+
+def run_code(code: str) -> str:
+    """
+    Removes markdown-style ```python ... ``` wrappers from code.
+    """
+    code = code.strip()
+
+    if code.startswith("```"):
+        # Remove first line (```python or ```)
+        code = code.split("\n", 1)[1]
+
+    if code.endswith("```"):
+        # Remove last line (```)
+        code = code.rsplit("\n", 1)[0]
+
+    return code.strip()
+
 
 @tool
 def run_code(code: str) -> dict:
-"""
-Executes a Python code
-This tool:
-1. Takes in python code as input
-3. Writes code into a temporary .py file
-4. Executes the file
-5. Returns its output
+    """
+    Executes Python code in an isolated temporary file.
 
-Parameters
-----------
-code : str
-Python source code to execute.
+    Steps:
+    1. Receives raw Python code.
+    2. Writes it into LLMFiles/runner.py.
+    3. Executes it using `uv run`.
+    4. Returns stdout, stderr, and return code.
+    """
 
-Returns
--------
-dict
-{
-"stdout": <program output>,
-"stderr": <errors if any>,
-"return_code": <exit code>
-}
-"""
-try:
-filename = "runner.py"
-os.makedirs("LLMFiles", exist_ok=True)
-with open(os.path.join("LLMFiles", filename), "w") as f:
-f.write(code)
+    try:
+        filename = "runner.py"
+        os.makedirs("LLMFiles", exist_ok=True)
 
-proc = subprocess.Popen(
-["uv", "run", filename],
-stdout=subprocess.PIPE,
-stderr=subprocess.PIPE,
-text=True,
-cwd="LLMFiles"
-)
-stdout, stderr = proc.communicate()
+        # Write code to file
+        with open(os.path.join("LLMFiles", filename), "w") as f:
+            f.write(code)
 
-# --- Step 4: Return everything ---
-return {
-"stdout": stdout,
-"stderr": stderr,
-"return_code": proc.returncode
-}
-except Exception as e:
-return {
-"stdout": "",
-"stderr": str(e),
-"return_code": -1
-}
+        # Execute code
+        proc = subprocess.Popen(
+            ["uv", "run", filename],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd="LLMFiles"
+        )
+
+        stdout, stderr = proc.communicate()
+
+        return {
+            "stdout": stdout,
+            "stderr": stderr,
+            "return_code": proc.returncode
+        }
+
+    except Exception as e:
+        return {
+            "stdout": "",
+            "stderr": str(e),
+            "return_code": -1
+        }
