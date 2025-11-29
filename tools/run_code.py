@@ -9,7 +9,7 @@ load_dotenv()
 client = genai.Client()
 
 
-def run_code(code: str) -> str:
+def strip_code_fences(code: str) -> str:
     """
     Removes markdown-style ```python ... ``` wrappers from code.
     """

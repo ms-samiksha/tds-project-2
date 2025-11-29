@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 
 @tool
-def send_request(url: str, payload: Dict[str, Any], headers: Optional[Dict[str, str]] = None) -> Any:
+def post_request(url: str, payload: Dict[str, Any], headers: Optional[Dict[str, str]] = None) -> Any:
     """
     Send an HTTP POST request to the given URL with the provided payload.
 

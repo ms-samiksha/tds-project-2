@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 
 @tool
-def web_scapper(url: str) -> str:
+def get_rendered_html(url: str) -> str:
     """
     Fetch and return the fully rendered HTML of a webpage using Playwright.
 
